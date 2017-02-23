@@ -180,6 +180,7 @@ endfunction()
 function(_pkg_create_imp_target _prefix _no_cmake_path _no_cmake_environment_path)
   unset(_libs)
   unset(_find_opts)
+  unset(_hints)
 
   # set the options that are used as long as the .pc file does not provide a library
   # path to look into
@@ -190,12 +191,20 @@ function(_pkg_create_imp_target _prefix _no_cmake_path _no_cmake_environment_pat
     string(APPEND _find_opts " NO_CMAKE_ENVIRONMENT_PATH")
   endif()
 
+  # first add all -L path
   foreach (flag IN LISTS ${_prefix}_LDFLAGS)
     if (flag MATCHES "^-L(.*)")
-      # only look into the given paths from now on
-      set(_find_opts HINTS ${CMAKE_MATCH_1} NO_DEFAULT_PATH)
-      continue()
+      # append path to HINTS
+      list(APPEND _hints ${CMAKE_MATCH_1})
     endif()
+  endforeach()
+
+  if(_hints)
+    string(APPEND _find_opts "HINTS ${_hints} NO_DEFAULT_PATH")
+  endif()
+
+  # then find all libraries needed
+  foreach (flag IN LISTS ${_prefix}_LDFLAGS)
     if (flag MATCHES "^-l(.*)")
       set(_pkg_search "${CMAKE_MATCH_1}")
     else()
